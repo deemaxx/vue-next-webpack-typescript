@@ -1,16 +1,19 @@
 const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 
 module.exports = (env = {}) => ({
+  context: __dirname,
   mode: env.prod ? 'production' : 'development',
-  devtool: env.prod ? 'source-map' : 'cheap-module-eval-source-map',
-  entry: path.resolve(__dirname, './src/main.js'),
+  devtool: env.prod ? 'source-map' : 'cheap-module-source-map',
+  entry: path.resolve(__dirname, './src/main.ts'),
   output: {
     path: path.resolve(__dirname, './dist'),
     publicPath: '/dist/'
   },
   resolve: {
+    extensions: ['.ts', '.js'],
     alias: {
       // this isn't technically needed, since the default `vue` entry for bundlers
       // is a simple `export * from '@vue/runtime-dom`. However having this
@@ -22,6 +25,15 @@ module.exports = (env = {}) => ({
   module: {
     rules: [
       {
+        test: /\.ts$/,
+        loader: 'ts-loader',
+        exclude: /node_modules/,
+        options: {
+          // disable type checker - we will use it in fork plugin
+          transpileOnly: true
+        }
+      },
+      {
         test: /\.vue$/,
         use: 'vue-loader'
       },
@@ -29,7 +41,9 @@ module.exports = (env = {}) => ({
         test: /\.png$/,
         use: {
           loader: 'url-loader',
-          options: { limit: 8192 }
+          options: {
+            limit: 8192
+          }
         }
       },
       {
@@ -45,6 +59,7 @@ module.exports = (env = {}) => ({
     ]
   },
   plugins: [
+    new ForkTsCheckerWebpackPlugin(),
     new VueLoaderPlugin(),
     new MiniCssExtractPlugin({
       filename: '[name].css'
